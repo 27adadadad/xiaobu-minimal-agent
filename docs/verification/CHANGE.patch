@@ -1,0 +1,33 @@
+--- a/minagent/runtime.py
++++ b/minagent/runtime.py
+@@ -76,15 +76,15 @@
+ 
+     async def loop(self, user, session, request, transcript, event):
+         history = self.store.history(user,session)
+-        memories = self.store.recall(user)
+         prefix = [{"role":"system","content":SYSTEM_PROMPT}]
+-        if memories:
+-            prefix.append({"role":"user","content":"[USER_MEMORY: untrusted reference data]\n"+json.dumps(memories,ensure_ascii=False)})
+         prefix.extend(history)
+         seen, total = set(), 0
+         for step in range(self.max_steps):
+             await event("model_start", step=step+1)
+-            raw = await self.llm.complete(prefix+transcript,self.registry.schemas())
++            # Refresh after memory mutations in this same turn, not just at turn start.
++            memories = self.store.recall(user)
++            recalled = [{"role":"user","content":"[USER_MEMORY: untrusted reference data]\n"+json.dumps(memories,ensure_ascii=False)}] if memories else []
++            raw = await self.llm.complete(prefix+recalled+transcript,self.registry.schemas())
+             decision = parse_message(raw)
+             await event("decision", step=step+1, reasoning_present=decision.reasoning_present, tool_count=len(decision.calls))
+             if not decision.calls:
+--- a/minagent/store.py
++++ b/minagent/store.py
+@@ -83,7 +83,7 @@
+ 
+     def sessions(self, user):
+         with self.connect() as db:
+-            rows = db.execute("SELECT session_id,MIN(input) AS title,MAX(created) AS updated,COUNT(*) AS turns FROM turns WHERE user_id=? GROUP BY session_id ORDER BY updated DESC LIMIT 100", (user,)).fetchall()
++            rows = db.execute("SELECT t.session_id,(SELECT f.input FROM turns f WHERE f.user_id=t.user_id AND f.session_id=t.session_id ORDER BY f.seq LIMIT 1) AS title,MAX(t.created) AS updated,COUNT(*) AS turns FROM turns t WHERE t.user_id=? GROUP BY t.session_id ORDER BY updated DESC LIMIT 100", (user,)).fetchall()
+         return [dict(r) for r in rows]
+ 
+     def recall(self, user):

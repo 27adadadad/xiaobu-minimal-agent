@@ -1,0 +1,3 @@
+# Preserve evidence/source bytes across platforms; the rollback is a POSIX script.
+* -text
+*.sh text eol=lf

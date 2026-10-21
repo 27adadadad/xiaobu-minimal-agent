@@ -8,7 +8,7 @@
 |---|---|
 | 离线单元/HTTP/SSE 测试 | 36 passed, 1 skipped, 1 warning；退出 0 |
 | 全新虚拟环境安装 | 按 requirements-lock.txt 安装，再次 36 passed, 1 skipped, 1 warning；退出 0 |
-| 真 LLM 测试 | skipped：尚未配置本项目凭证，用户选择稍后配置 |
+| 真 LLM 测试 | 用户本地配置后显式执行：1 passed in 8.77s，退出 0；使用真实 OpenAI-compatible HTTP，不使用模拟模型 |
 | JS 语法 | node --check web/app.js，退出 0 |
 | 浏览器生产入口 | 未配置提示可见，发送按钮禁用，不伪造模型回复 |
 | 浏览器离线夹具 | 真实 Runtime + 测试模型，calculator 返回 144；工具轨迹/最终答案可见，发送按钮恢复 |
@@ -18,7 +18,7 @@
 | 浏览器控制台 | 最后一次重新导航后 0 error、0 warning |
 | 真实天气服务 | Open-Meteo 返回上海、中国、Asia/Shanghai；2026-10-21T18:15，17.6°C，降水 0.0 mm |
 
-天气是本次观测样本，不是长期承诺；它证明天气 HTTP 工具可用，**不能证明真实 LLM 自主调用已经完成**。移动截图带 OFFLINE UI FIXTURE 标识，不冒充真实模型。
+天气是本次观测样本，不是长期承诺；它证明天气 HTTP 工具可用，它与下方独立执行的真实 LLM 测试是不同证据。移动截图带 OFFLINE UI FIXTURE 标识，不冒充真实模型。
 
 唯一离线测试 warning 来自当前 Starlette TestClient 对 httpx 的弃用提示，不是失败；没有隐藏 warning。
 
@@ -37,7 +37,7 @@
 
 ## 未验收或未实现
 
-- 真实模型端到端：用户填本地 .env 后，按 README 显式运行 tests/test_live.py。
+- 真实模型端到端已通过当前配置的 tests/test_live.py；真实模型天气→待办组合、所有供应商及更多异常输入尚未覆盖。
 - 没有生产认证/多机部署/持久化后台任务；不做生产可用保证。
 - 真实 LLM 的每种提示都不保证必然按同一顺序调用；以 live test 实际轨迹为准。
 - GitHub CI 与本机测试是不同证据，发布后以仓库 Actions 当次结果为准。
@@ -45,3 +45,7 @@
 ## 提交完整性
 
 源码、测试、README、运行系统 Prompt、AI 使用记录、五题架构答案、UI 截图、依赖锁、离线 CI 和回滚证据均在仓库。未提交 .env、密钥、运行数据库或个人聊天。
+
+## 配置后追加验收
+
+真实测试结果：`1 passed in 8.77s`，退出 0。检查 calculator 实际工具结果为 144、todo 真实持久化、memory 存储上海、新 session 回答上海、用户 B 无 A 的待办/结构化记忆，以及新 session 不混入旧聊天。断言源码见 tests/test_live.py。没有读取或打印凭证；HTTP 响应来自实际配置的服务，未注入测试 transport。原离线的 1 skipped 是未显式开启 RUN_LIVE 时的预期行为，不代表此追加验收跳过。

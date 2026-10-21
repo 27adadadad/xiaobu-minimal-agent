@@ -2,7 +2,7 @@
 
 从零实现：**手写 Agent Runtime、真实 LLM HTTP 适配器、工具注册与 Schema 校验、SQLite 会话/个人记忆、本地浏览器 UI**。没有 LangChain、LangGraph、OpenHands 或 OpenClaw 依赖。
 
-> **交付状态（2026-10-21）：工程和离线验证已完成；真实 LLM 验收待配置。** 本项目未配置模型凭证，用户选择稍后配置。真实天气查询成功不等于真实模型已联调。正式入口只连接真实模型，未配置就报错，绝不静默降级到假模型。
+> **交付状态（2026-10-21）：真实 LLM 端到端验收已通过。** 用户在本地配置后，真实模型测试 1 passed（8.77 秒），覆盖自主计算、待办写入、显式记忆与跨会话召回；离线 36 项测试及 GitHub CI 已通过。正式入口只连接真实模型，未配置就报错，不静默降级。此结果只证明当前配置和验收用例，不代表所有供应商/输入都已验证。
 
 ![桌面界面：未配置模型时明确提示](docs/ui-desktop.png)
 
@@ -117,7 +117,7 @@ $env:RUN_LIVE="1"
 Remove-Item Env:RUN_LIVE
 ```
 
-真实测试使用 `OpenAICompatibleLLM`，检查自主计算、todo、memory、跨窗口召回和用户隔离；不使用 ScriptedLLM。当前未执行通过，见[验收记录](docs/ACCEPTANCE.md)。
+真实测试使用 `OpenAICompatibleLLM`，检查自主计算、todo、memory、跨窗口召回和用户隔离；不使用 ScriptedLLM。本次真实调用已通过，见[验收记录](docs/ACCEPTANCE.md)。
 
 离线覆盖直接回复、多步/多工具、天气→待办依赖、Schema/恶意计算、幂等、隔离、持久化、超时/取消、并发、错误恢复、HTTP 协议和 SSE。
 

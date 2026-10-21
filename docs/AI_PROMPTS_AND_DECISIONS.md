@@ -52,3 +52,7 @@
 ## 证据位置
 
 [验收记录](ACCEPTANCE.md)区分离线测试、浏览器、真实天气和待联调的模型；[VERIFICATION.txt](verification/VERIFICATION.txt)保存自查修正的 BASELINE/MODIFIED/ROLLBACK。未使用独立子代理，不虚构多人 review。
+
+## 配置后续验收（2026-10-21）
+
+用户回复“配置好了”后，确认 configured=True（不输出密钥），显式 RUN_LIVE=1 执行 tests/test_live.py，真实模型端到端 1 passed in 8.77s，退出 0。先前“未配置”的记录是交付当时的历史状态，不再是当前阻塞。

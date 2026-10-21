@@ -1,0 +1,13 @@
+REAL LLM ACCEPTANCE — 2026-10-21
+CWD: C:\Users\Administrator\Desktop\1\minimal-agent
+Configuration check stdout: configured=True
+Command: RUN_LIVE=1 .venv/Scripts/python -m pytest tests/test_live.py -q -s --tb=short --basetemp=<fresh project artifacts/live UUID>
+Literal stdout:
+.
+1 passed in 8.77s
+Literal stderr: (empty)
+Exit status: 0
+Provider: project-local .env; actual HTTP OpenAICompatibleLLM; no mock transport.
+Assertions: calculator tool result 144; todo insertion; memory write; cross-session Shanghai recall; user-B todo/memory isolation; session history isolation.
+Secrets: not printed or committed.
+Core runtime source unchanged. Original self-review observations remain BASELINE 2 failed / MODIFIED 2 passed / ROLLBACK 2 failed.

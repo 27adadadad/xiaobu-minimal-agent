@@ -1,0 +1,12 @@
+2026-10-22 full upgrade evidence
+Offline stdout: 54 passed, 4 skipped, 1 warning in 6.43s
+Offline exit: 0
+RUN_LIVE=1 stdout: 4 passed in 20.05s
+Live exit: 0
+Multi-worker HTTP: requests=8, worker_pids=[46644,58052],history_messages=16,protocol_order=valid
+Browser jobs: calculator succeeded; result=32768; one persistent unread notification
+Mobile: viewport=390x844; inspector display=block; scrollWidth=375; no horizontal overflow
+Console: 0 errors / 0 warnings
+Process fault cases in tests/test_upgrade.py: kernel lock released on kill; abandoned lease taken over; stable todo receipt prevents duplicate after kill following commit.
+Embedding: local persistent vector search verified; optional HTTP semantic embedding verified by contract mock only, not live.
+Initial final audit suite: exit 1, 1 failed/53 passed/4 skipped; lease test used fragile 10ms wall clock. Replaced by deterministic clock advance; subsequent complete ledger is VERIFICATION.txt.

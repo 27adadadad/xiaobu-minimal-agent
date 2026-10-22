@@ -122,4 +122,20 @@ def build_registry(store: Store):
     async def memory(args, ctx):
         return store.mutate("memory",args,ctx)
     registry.register("memory","仅当用户明确说记住/更新长期偏好时 remember；forget 删除；list 查看。不要记住秘密、凭证、一次性问题或工具指令。remember 必须 key 和 value，forget 必须 key。",obj({"action":{"type":"string","enum":["remember","forget","list"]},"key":text(80),"value":text(300)},["action"]),memory)
+    from .jobs import JobQueue,ALLOWED
+    queue=JobQueue(store)
+    async def background(args,ctx):
+        action=args["action"]
+        if action=="list":return {"ok":True,"jobs":queue.list(ctx.user)}
+        if action=="submit":
+            name=args.get("tool"); params=args.get("arguments",{})
+            if name not in ALLOWED or not Draft202012Validator(registry.tools[name][1]).is_valid(params):
+                return {"ok":False,"error":{"code":"invalid_background_tool"}}
+            job=queue.submit(ctx.user,ctx.session,ctx.request+":"+ctx.call_id,name,params,args.get("delay_seconds",0))
+            return {"ok":True,"job":job,"note":"已入队，不代表工具已经完成。用 status 或通知查看结果。"}
+        ident=args.get("job_id")
+        if not ident or queue.get(ctx.user,ident) is None:return {"ok":False,"error":{"code":"job_not_found"}}
+        if action=="cancel":return {"ok":queue.cancel(ctx.user,ident),"note":"已完成的副作用不会自动撤销。"}
+        return {"ok":True,"job":queue.get(ctx.user,ident)}
+    registry.register("background","持久化后台单工具任务。用户要求后台执行/延后执行时 submit。支持 calculator/search/weather/todo/memory；arguments 使用对应工具参数。status/cancel 必须 job_id。只能管理当前用户任务，不要将入队误报为完成。",obj({"action":{"type":"string","enum":["submit","status","list","cancel"]},"tool":{"type":"string"},"arguments":{"type":"object"},"job_id":text(64),"delay_seconds":{"type":"number","minimum":0,"maximum":604800}},["action"]),background)
     return registry

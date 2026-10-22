@@ -18,6 +18,8 @@ class OpenAICompatibleLLM:
         if not s.configured:
             raise LLMError("llm_not_configured")
         body = {"model": s.model, "messages": messages, "tools": tools, "tool_choice": "auto", "stream": False}
+        if not tools:
+            body.pop("tools",None); body.pop("tool_choice",None)
         async with httpx.AsyncClient(timeout=s.timeout, transport=self.transport) as client:
             for attempt in range(3):
                 try:

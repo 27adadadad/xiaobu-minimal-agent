@@ -3,7 +3,7 @@ Changes: Runtime.loop memory refresh; Store.sessions first-seq title.
 
 PREPARE BASELINE COPY
 CWD: C:\Users\Administrator\Desktop\1\minimal-agent
-COMMAND: ["C:\\Program Files\\Git\\bin\\bash.exe", "C:\\Users\\Administrator\\Desktop\\1\\minimal-agent\\docs\\verification\\ROLLBACK.sh", "C:\\Users\\Administrator\\Desktop\\1\\minimal-agent\\artifacts\\transaction-ef6b21e25da0442395ca23e5ffab33a7\\baseline"]
+COMMAND: ["C:\\Program Files\\Git\\bin\\bash.exe", "C:\\Users\\Administrator\\Desktop\\1\\minimal-agent\\docs\\verification\\ROLLBACK.sh", "C:\\Users\\Administrator\\Desktop\\1\\minimal-agent\\artifacts\\transaction-92279a5d790a457880525ceda6e27d9e\\baseline"]
 EXIT: 0
 STDOUT:
 Restored baseline runtime.py and store.py; no database or .env touched.
@@ -13,7 +13,7 @@ STDERR:
 
 PREPARE BASELINE COPY
 CWD: C:\Users\Administrator\Desktop\1\minimal-agent
-COMMAND: ["C:\\Program Files\\Git\\bin\\bash.exe", "C:\\Users\\Administrator\\Desktop\\1\\minimal-agent\\docs\\verification\\ROLLBACK.sh", "C:\\Users\\Administrator\\Desktop\\1\\minimal-agent\\artifacts\\transaction-ef6b21e25da0442395ca23e5ffab33a7\\reconstructed"]
+COMMAND: ["C:\\Program Files\\Git\\bin\\bash.exe", "C:\\Users\\Administrator\\Desktop\\1\\minimal-agent\\docs\\verification\\ROLLBACK.sh", "C:\\Users\\Administrator\\Desktop\\1\\minimal-agent\\artifacts\\transaction-92279a5d790a457880525ceda6e27d9e\\reconstructed"]
 EXIT: 0
 STDOUT:
 Restored baseline runtime.py and store.py; no database or .env touched.
@@ -22,8 +22,8 @@ STDERR:
 
 
 BASELINE
-CWD: C:\Users\Administrator\Desktop\1\minimal-agent\artifacts\transaction-ef6b21e25da0442395ca23e5ffab33a7\baseline
-COMMAND: ["C:\\Users\\Administrator\\Desktop\\1\\minimal-agent\\.venv\\Scripts\\python.exe", "-m", "pytest", "tests/test_agent.py", "-q", "--tb=short", "-k", "memory_refreshes_between_model_steps or session_title_is_first_message", "--basetemp", "C:\\Users\\Administrator\\Desktop\\1\\minimal-agent\\artifacts\\transaction-ef6b21e25da0442395ca23e5ffab33a7\\baseline\\artifacts\\pytest-ba6a41a50b49482499f0a3b0f57b6bf9"]
+CWD: C:\Users\Administrator\Desktop\1\minimal-agent\artifacts\transaction-92279a5d790a457880525ceda6e27d9e\baseline
+COMMAND: ["C:\\Users\\Administrator\\Desktop\\1\\minimal-agent\\.venv\\Scripts\\python.exe", "-m", "pytest", "tests/test_agent.py", "-q", "--tb=short", "-k", "memory_refreshes_between_model_steps or session_title_is_first_message", "--basetemp", "C:\\Users\\Administrator\\Desktop\\1\\minimal-agent\\artifacts\\transaction-92279a5d790a457880525ceda6e27d9e\\baseline\\artifacts\\pytest-64d1a211a3254f72819ff3ff808a84c1"]
 EXIT: 1
 STDOUT:
 FF                                                                       [100%]
@@ -32,7 +32,57 @@ __________________ test_memory_refreshes_between_model_steps __________________
 tests\test_agent.py:250: in test_memory_refreshes_between_model_steps
     assert any((m.get("content") or "").startswith("[USER_MEMORY") for m in llm.requests[1])
 E   assert False
-E    +  where False = any(<generator object test_memory_refreshes_between_model_steps.<locals>.<genexpr> at 0x0000021E31C62B50>)
+E    +  where False = any(<generator object test_memory_refreshes_between_model_steps.<locals>.<genexpr> at 0x000002DAD798B440>)
+_____________________ test_session_title_is_first_message _____________________
+tests\test_agent.py:257: in test_session_title_is_first_message
+    assert store.sessions("A")[0]["title"] == "z-first"
+E   AssertionError: assert 'a-second' == 'z-first'
+E     
+E     - z-first
+E     + a-second
+=========================== short test summary info ===========================
+FAILED tests/test_agent.py::test_memory_refreshes_between_model_steps - asser...
+FAILED tests/test_agent.py::test_session_title_is_first_message - AssertionEr...
+2 failed, 27 deselected in 0.70s
+
+STDERR:
+
+
+MODIFIED
+CWD: C:\Users\Administrator\Desktop\1\minimal-agent
+COMMAND: ["C:\\Users\\Administrator\\Desktop\\1\\minimal-agent\\.venv\\Scripts\\python.exe", "-m", "pytest", "tests/test_agent.py", "-q", "--tb=short", "-k", "memory_refreshes_between_model_steps or session_title_is_first_message", "--basetemp", "C:\\Users\\Administrator\\Desktop\\1\\minimal-agent\\artifacts\\pytest-06732d44e3894bafa134c1c958e547a7"]
+EXIT: 0
+STDOUT:
+..                                                                       [100%]
+2 passed, 27 deselected in 0.33s
+
+STDERR:
+
+
+ROLLBACK EXECUTION
+CWD: C:\Users\Administrator\Desktop\1\minimal-agent
+COMMAND: ["C:\\Program Files\\Git\\bin\\bash.exe", "C:\\Users\\Administrator\\Desktop\\1\\minimal-agent\\docs\\verification\\ROLLBACK.sh", "C:\\Users\\Administrator\\Desktop\\1\\minimal-agent\\artifacts\\transaction-92279a5d790a457880525ceda6e27d9e\\restored"]
+EXIT: 0
+STDOUT:
+Restored baseline runtime.py and store.py; no database or .env touched.
+
+STDERR:
+
+ROLLBACK HASH MATCH minagent/runtime.py c602f182cc03bcaad9e7b97fcc48139b9b0b8e5d786d9f6757708c0e8c6654d8
+ROLLBACK HASH MATCH minagent/store.py b1fc0f9e4d1978a031d5a52b31ea30e1e075887b12d0b25075fcf1090289cba5
+
+ROLLBACK
+CWD: C:\Users\Administrator\Desktop\1\minimal-agent\artifacts\transaction-92279a5d790a457880525ceda6e27d9e\restored
+COMMAND: ["C:\\Users\\Administrator\\Desktop\\1\\minimal-agent\\.venv\\Scripts\\python.exe", "-m", "pytest", "tests/test_agent.py", "-q", "--tb=short", "-k", "memory_refreshes_between_model_steps or session_title_is_first_message", "--basetemp", "C:\\Users\\Administrator\\Desktop\\1\\minimal-agent\\artifacts\\transaction-92279a5d790a457880525ceda6e27d9e\\restored\\artifacts\\pytest-ac0473166bc247c7be504de57008847e"]
+EXIT: 1
+STDOUT:
+FF                                                                       [100%]
+================================== FAILURES ===================================
+__________________ test_memory_refreshes_between_model_steps __________________
+tests\test_agent.py:250: in test_memory_refreshes_between_model_steps
+    assert any((m.get("content") or "").startswith("[USER_MEMORY") for m in llm.requests[1])
+E   assert False
+E    +  where False = any(<generator object test_memory_refreshes_between_model_steps.<locals>.<genexpr> at 0x0000021B35D5B440>)
 _____________________ test_session_title_is_first_message _____________________
 tests\test_agent.py:257: in test_session_title_is_first_message
     assert store.sessions("A")[0]["title"] == "z-first"
@@ -48,80 +98,30 @@ FAILED tests/test_agent.py::test_session_title_is_first_message - AssertionEr...
 STDERR:
 
 
-MODIFIED
-CWD: C:\Users\Administrator\Desktop\1\minimal-agent
-COMMAND: ["C:\\Users\\Administrator\\Desktop\\1\\minimal-agent\\.venv\\Scripts\\python.exe", "-m", "pytest", "tests/test_agent.py", "-q", "--tb=short", "-k", "memory_refreshes_between_model_steps or session_title_is_first_message", "--basetemp", "C:\\Users\\Administrator\\Desktop\\1\\minimal-agent\\artifacts\\pytest-2aec9669539a4b29a5c61c0efd23896c"]
-EXIT: 0
-STDOUT:
-..                                                                       [100%]
-2 passed, 27 deselected in 0.32s
-
-STDERR:
-
-
-ROLLBACK EXECUTION
-CWD: C:\Users\Administrator\Desktop\1\minimal-agent
-COMMAND: ["C:\\Program Files\\Git\\bin\\bash.exe", "C:\\Users\\Administrator\\Desktop\\1\\minimal-agent\\docs\\verification\\ROLLBACK.sh", "C:\\Users\\Administrator\\Desktop\\1\\minimal-agent\\artifacts\\transaction-ef6b21e25da0442395ca23e5ffab33a7\\restored"]
-EXIT: 0
-STDOUT:
-Restored baseline runtime.py and store.py; no database or .env touched.
-
-STDERR:
-
-ROLLBACK HASH MATCH minagent/runtime.py c602f182cc03bcaad9e7b97fcc48139b9b0b8e5d786d9f6757708c0e8c6654d8
-ROLLBACK HASH MATCH minagent/store.py b1fc0f9e4d1978a031d5a52b31ea30e1e075887b12d0b25075fcf1090289cba5
-
-ROLLBACK
-CWD: C:\Users\Administrator\Desktop\1\minimal-agent\artifacts\transaction-ef6b21e25da0442395ca23e5ffab33a7\restored
-COMMAND: ["C:\\Users\\Administrator\\Desktop\\1\\minimal-agent\\.venv\\Scripts\\python.exe", "-m", "pytest", "tests/test_agent.py", "-q", "--tb=short", "-k", "memory_refreshes_between_model_steps or session_title_is_first_message", "--basetemp", "C:\\Users\\Administrator\\Desktop\\1\\minimal-agent\\artifacts\\transaction-ef6b21e25da0442395ca23e5ffab33a7\\restored\\artifacts\\pytest-e52b5543c41a45e0808b5f579344375d"]
-EXIT: 1
-STDOUT:
-FF                                                                       [100%]
-================================== FAILURES ===================================
-__________________ test_memory_refreshes_between_model_steps __________________
-tests\test_agent.py:250: in test_memory_refreshes_between_model_steps
-    assert any((m.get("content") or "").startswith("[USER_MEMORY") for m in llm.requests[1])
-E   assert False
-E    +  where False = any(<generator object test_memory_refreshes_between_model_steps.<locals>.<genexpr> at 0x000001E19E1A2B50>)
-_____________________ test_session_title_is_first_message _____________________
-tests\test_agent.py:257: in test_session_title_is_first_message
-    assert store.sessions("A")[0]["title"] == "z-first"
-E   AssertionError: assert 'a-second' == 'z-first'
-E     
-E     - z-first
-E     + a-second
-=========================== short test summary info ===========================
-FAILED tests/test_agent.py::test_memory_refreshes_between_model_steps - asser...
-FAILED tests/test_agent.py::test_session_title_is_first_message - AssertionEr...
-2 failed, 27 deselected in 0.61s
-
-STDERR:
-
-
 PATCH RECONSTRUCTION
-CWD: C:\Users\Administrator\Desktop\1\minimal-agent\artifacts\transaction-ef6b21e25da0442395ca23e5ffab33a7\reconstructed
+CWD: C:\Users\Administrator\Desktop\1\minimal-agent\artifacts\transaction-92279a5d790a457880525ceda6e27d9e\reconstructed
 COMMAND: ["git", "apply", "C:\\Users\\Administrator\\Desktop\\1\\minimal-agent\\docs\\verification\\CHANGE.patch"]
 EXIT: 0
 STDOUT:
 
 STDERR:
 
-MODIFIED/PATCH SHA minagent/runtime.py 3f130c609929873e974f8077209480834f9ee692a283d71e5fb86f6240ea4b50
-MODIFIED/PATCH SHA minagent/store.py 552188f8fe963d14baf49816c6229ede40b7d8a0a650b71732587ae291b56973
+MODIFIED/PATCH SHA minagent/runtime.py 64938a3ce78268a074f5df742d76b858efc66dbd6b66ca76610df2280faedaca
+MODIFIED/PATCH SHA minagent/store.py f19d2b588c1aed81d254a5e0d919d674d19c0bb34166f8b6011325e533c6ab31
 
 FULL OFFLINE SUITE
 CWD: C:\Users\Administrator\Desktop\1\minimal-agent
-COMMAND: ["C:\\Users\\Administrator\\Desktop\\1\\minimal-agent\\.venv\\Scripts\\python.exe", "-m", "pytest", "-q", "--tb=short", "--basetemp", "C:\\Users\\Administrator\\Desktop\\1\\minimal-agent\\artifacts\\transaction-ef6b21e25da0442395ca23e5ffab33a7\\full-suite"]
+COMMAND: ["C:\\Users\\Administrator\\Desktop\\1\\minimal-agent\\.venv\\Scripts\\python.exe", "-m", "pytest", "-q", "--tb=short", "--basetemp", "C:\\Users\\Administrator\\Desktop\\1\\minimal-agent\\artifacts\\transaction-92279a5d790a457880525ceda6e27d9e\\full-suite"]
 EXIT: 0
 STDOUT:
-.............................s........                                   [100%]
+.............................ssss.........................               [100%]
 ============================== warnings summary ===============================
 .venv\Lib\site-packages\fastapi\testclient.py:1
   C:\Users\Administrator\Desktop\1\minimal-agent\.venv\Lib\site-packages\fastapi\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
     from starlette.testclient import TestClient as TestClient  # noqa
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-37 passed, 1 skipped, 1 warning in 2.88s
+54 passed, 4 skipped, 1 warning in 6.98s
 
 STDERR:
 

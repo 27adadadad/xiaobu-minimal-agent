@@ -71,8 +71,8 @@ $("user").onchange = async () => {
   user=$("user").value; localStorage.setItem("agent-user",user);
   // Clear old identity data before async requests finish, not just after refresh.
   ++viewVersion;
-  for (const id of ["messages", "todos", "sessions", "trace"]) $(id).replaceChildren();
-  $("todo-count").textContent="0";
+  for (const id of ["messages", "todos", "sessions", "trace", "jobs"]) $(id).replaceChildren();
+  $("todo-count").textContent="0"; $("job-notice").textContent="";
   session=sessionStorage.getItem("agent-session-"+user) || crypto.randomUUID(); saveSession();
   await loadHistory().catch(showError);
 };
@@ -129,3 +129,40 @@ $("composer").onsubmit=async(event) => {
     $("config-notice").hidden=configured; setBusy(false); await loadHistory();
   } catch(error) { configured=false; setBusy(false); showError(error); }
 })();
+
+
+async function refreshJobs() {
+  if (document.hidden) return;
+  const current=user,version=viewVersion;
+  try {
+    const data=await get('/api/jobs?'+query({user_id:current}));
+    if(current!==user || version!==viewVersion)return;
+    $('jobs').replaceChildren();
+    $('job-notice').textContent=data.notifications.length ? data.notifications.length+' 条新结果' : '';
+    const unread=new Set(data.notifications.map(j=>j.id));
+    const labels={queued:'等待执行',running:'执行中',succeeded:'已完成',failed:'失败',cancelled:'已取消'};
+    for(const job of data.jobs.slice(0,20)) {
+      const details=document.createElement('details'); details.className='trace';
+      const summary=document.createElement('summary'); summary.textContent=job.tool+' · '+labels[job.state]+(unread.has(job.id)?' · 新':'');
+      const pre=document.createElement('pre'); pre.textContent=JSON.stringify({id:job.id,arguments:job.arguments,result:job.result,scheduled:new Date(job.run_at*1000).toLocaleString()},null,2);
+      details.append(summary,pre);
+      const button=document.createElement('button');
+      const active=['queued','running'].includes(job.state);
+      button.textContent=active?'取消任务':'标记已读';
+      button.onclick=async()=> {
+        button.disabled=true;
+        try {
+          const res=await fetch('/api/jobs/'+job.id+'/'+(active?'cancel':'ack')+'?'+query({user_id:current}),{method:'POST'});
+          if(!res.ok)throw new Error('任务操作失败');
+          await refreshJobs();await refreshSide();
+        }catch(error){showError(error);button.disabled=false;}
+      };
+      if(active || unread.has(job.id))details.append(button);
+      $('jobs').append(details);
+    }
+    if(!data.jobs.length){const p=document.createElement('p');p.className='muted';p.textContent='可说“后台计算 128*256”，结果完成后会显示在这里。';$('jobs').append(p);}
+  }catch(error){$('job-notice').textContent='连接中断，稍后重试';}
+}
+setInterval(refreshJobs,2000);
+document.addEventListener('visibilitychange',refreshJobs);
+refreshJobs();

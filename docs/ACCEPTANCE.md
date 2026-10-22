@@ -1,3 +1,5 @@
+> 历史材料：以下实现状态对应初始交付版本。2026-10-22已升级，当前能力与验收以README和FULL_UPGRADE_ACCEPTANCE.md为准。
+
 # 实际验收记录
 
 日期：2026-10-21。环境：Windows、Python 3.13.12；确切依赖见 requirements-lock.txt。

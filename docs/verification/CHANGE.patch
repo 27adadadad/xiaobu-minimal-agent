@@ -1,10 +1,46 @@
 --- a/minagent/runtime.py
 +++ b/minagent/runtime.py
-@@ -76,15 +76,20 @@
+@@ -7,6 +7,9 @@
+ from .prompts import SYSTEM_PROMPT
+ from .tools import ToolContext
+ from .llm import LLMError
++from .coordination import session_lock
++from .context import ContextManager
++from .vectors import VectorIndex,HTTPEmbedding
+ 
+ 
+ @dataclass
+@@ -21,6 +24,9 @@
+         self.max_steps, self.tool_timeout, self.run_timeout = max_steps, tool_timeout, run_timeout
+         self.gates = {}
+         self.capacity = asyncio.Semaphore(8)
++        settings=getattr(llm,"settings",None)
++        embedding=HTTPEmbedding(settings) if settings and settings.embedding_model else None
++        self.context=ContextManager(store,llm,VectorIndex(store,embedding))
+ 
+     @asynccontextmanager
+     async def gate(self, key):
+@@ -34,7 +40,10 @@
+         gate.refs += 1
+         try:
+             async with gate.lock:
+-                yield
++                async with session_lock(self.store.path,*key):
++                    # A crashed predecessor's kernel lock has now been released.
++                    self.store.recover(*key)
++                    yield
+         finally:
+             gate.refs -= 1
+             if not gate.refs:
+@@ -75,16 +84,23 @@
+                 return result
  
      async def loop(self, user, session, request, transcript, event):
-         history = self.store.history(user,session)
+-        history = self.store.history(user,session)
 -        memories = self.store.recall(user)
++        history = await self.context.prepare(user,session,transcript[0]["content"])
++        if self.context.last_error:
++            await event("context_notice",code=self.context.last_error)
          prefix = [{"role":"system","content":SYSTEM_PROMPT}]
 -        if memories:
 -            prefix.append({"role":"user","content":"[USER_MEMORY: untrusted reference data]\n"+json.dumps(memories,ensure_ascii=False)})
@@ -27,6 +63,19 @@
              if not decision.calls:
 --- a/minagent/store.py
 +++ b/minagent/store.py
+@@ -61,10 +61,10 @@
+         with self.connect() as db:
+             db.execute("UPDATE turns SET status=?,result=?,messages=? WHERE user_id=? AND session_id=? AND request_id=?", (result["status"],dump(result),dump(messages),user,session,request))
+ 
+-    def recover(self):
++    def recover(self, user=None, session=None):
+         # Called once at single-process startup, never once per request.
+         with self.connect() as db:
+-            rows = db.execute("SELECT * FROM turns WHERE status='running'").fetchall()
++            rows = db.execute("SELECT * FROM turns WHERE status='running'" + (" AND user_id=? AND session_id=?" if user is not None else ""), (user,session) if user is not None else ()).fetchall()
+             for r in rows:
+                 result = {"status":"interrupted","answer":"上次执行因进程退出而中断。副作用请检查待办；不会自动重放。","request_id":r["request_id"]}
+                 messages = [{"role":"user","content":r["input"]},{"role":"assistant","content":result["answer"]}]
 @@ -83,7 +83,7 @@
  
      def sessions(self, user):

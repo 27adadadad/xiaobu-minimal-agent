@@ -61,10 +61,10 @@ class Store:
         with self.connect() as db:
             db.execute("UPDATE turns SET status=?,result=?,messages=? WHERE user_id=? AND session_id=? AND request_id=?", (result["status"],dump(result),dump(messages),user,session,request))
 
-    def recover(self):
+    def recover(self, user=None, session=None):
         # Called once at single-process startup, never once per request.
         with self.connect() as db:
-            rows = db.execute("SELECT * FROM turns WHERE status='running'").fetchall()
+            rows = db.execute("SELECT * FROM turns WHERE status='running'" + (" AND user_id=? AND session_id=?" if user is not None else ""), (user,session) if user is not None else ()).fetchall()
             for r in rows:
                 result = {"status":"interrupted","answer":"上次执行因进程退出而中断。副作用请检查待办；不会自动重放。","request_id":r["request_id"]}
                 messages = [{"role":"user","content":r["input"]},{"role":"assistant","content":result["answer"]}]

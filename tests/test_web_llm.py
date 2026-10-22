@@ -92,3 +92,23 @@ def test_recover_interrupted_and_context_budget(tmp_path):
     assert s.turn("A","1","r")["status"] == "interrupted"
     assert s.history("A","1")[-1]["role"] == "assistant"
     assert s.history("A","1",budget=1) == []
+
+
+def test_starting_another_worker_does_not_interrupt_active_turn(tmp_path):
+    app=app_for(tmp_path)
+    app.state.runtime.store.start('A','1','active','running elsewhere')
+    with TestClient(app) as client:
+        assert app.state.runtime.store.turn('A','1','active')['status']=='running'
+
+
+def test_jobs_http_ownership_cancel_and_ack(tmp_path):
+    from minagent.jobs import JobQueue
+    app=app_for(tmp_path);q=JobQueue(app.state.runtime.store)
+    job=q.submit('A','1','delayed','calculator',{'expression':'1+1'},delay=100)
+    with TestClient(app) as client:
+        assert client.get('/api/jobs?user_id=B').json()['jobs']==[]
+        assert not client.post('/api/jobs/'+job['id']+'/cancel?user_id=B').json()['ok']
+        assert client.post('/api/jobs/'+job['id']+'/cancel?user_id=A').json()['ok']
+        assert client.get('/api/jobs?user_id=A').json()['notifications']
+        client.post('/api/jobs/'+job['id']+'/ack?user_id=A')
+        assert client.get('/api/jobs?user_id=A').json()['notifications']==[]

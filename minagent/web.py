@@ -14,6 +14,7 @@ from .store import Store
 from .tools import build_registry
 from .llm import OpenAICompatibleLLM
 from .runtime import Runtime
+from .jobs import JobQueue,Worker
 
 ID = Annotated[str, Query(pattern=r"^[A-Za-z0-9_-]{1,64}$")]
 
@@ -39,8 +40,11 @@ def create_app(settings=None, runtime=None):
         runtime = Runtime(store,build_registry(store),OpenAICompatibleLLM(settings))
     @asynccontextmanager
     async def lifespan(app):
-        runtime.store.recover()
-        yield
+        worker=asyncio.create_task(Worker(JobQueue(runtime.store),runtime.registry).serve())
+        try:yield
+        finally:
+            worker.cancel()
+            with suppress(asyncio.CancelledError):await worker
     app = FastAPI(title="Handbuilt Agent",lifespan=lifespan,docs_url=None,redoc_url=None,openapi_url=None)
     app.state.runtime = runtime
     app.add_middleware(TrustedHostMiddleware,allowed_hosts=["localhost","127.0.0.1","testserver"])
@@ -78,6 +82,21 @@ def create_app(settings=None, runtime=None):
     @app.get("/api/todos")
     async def todos(user_id: ID):
         return {"items":runtime.store.todos(user_id)}
+
+    jobs=JobQueue(runtime.store)
+
+    @app.get("/api/jobs")
+    async def job_list(user_id: ID):
+        return {"jobs":jobs.list(user_id),"notifications":jobs.notifications(user_id)}
+
+    @app.post("/api/jobs/{job_id}/cancel")
+    async def cancel_job(job_id: str,user_id: ID):
+        return {"ok":jobs.cancel(user_id,job_id)}
+
+    @app.post("/api/jobs/{job_id}/ack")
+    async def ack_job(job_id: str,user_id: ID):
+        jobs.ack(user_id,job_id)
+        return {"ok":True}
 
     def require_model():
         if not settings.configured:

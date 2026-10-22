@@ -7,6 +7,9 @@ from .protocol import parse_message, ProtocolError
 from .prompts import SYSTEM_PROMPT
 from .tools import ToolContext
 from .llm import LLMError
+from .coordination import session_lock
+from .context import ContextManager
+from .vectors import VectorIndex,HTTPEmbedding
 
 
 @dataclass
@@ -21,6 +24,9 @@ class Runtime:
         self.max_steps, self.tool_timeout, self.run_timeout = max_steps, tool_timeout, run_timeout
         self.gates = {}
         self.capacity = asyncio.Semaphore(8)
+        settings=getattr(llm,"settings",None)
+        embedding=HTTPEmbedding(settings) if settings and settings.embedding_model else None
+        self.context=ContextManager(store,llm,VectorIndex(store,embedding))
 
     @asynccontextmanager
     async def gate(self, key):
@@ -34,7 +40,10 @@ class Runtime:
         gate.refs += 1
         try:
             async with gate.lock:
-                yield
+                async with session_lock(self.store.path,*key):
+                    # A crashed predecessor's kernel lock has now been released.
+                    self.store.recover(*key)
+                    yield
         finally:
             gate.refs -= 1
             if not gate.refs:
@@ -75,7 +84,9 @@ class Runtime:
                 return result
 
     async def loop(self, user, session, request, transcript, event):
-        history = self.store.history(user,session)
+        history = await self.context.prepare(user,session,transcript[0]["content"])
+        if self.context.last_error:
+            await event("context_notice",code=self.context.last_error)
         prefix = [{"role":"system","content":SYSTEM_PROMPT}]
         prefix.extend(history)
         seen, total = set(), 0

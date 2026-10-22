@@ -89,7 +89,7 @@ $("composer").onsubmit=async(event) => {
   if (!message || busy || !configured) return;
   const requestId=crypto.randomUUID(); controller=new AbortController(); setBusy(true);
   $("prompt").value=""; bubble("user",message); $("trace").replaceChildren(); $("run-status").textContent="正在提交…";
-  let receivedFinal=false;
+  let receivedFinal=false, partial=null;
   try {
     const response=await fetch("/api/chat/stream",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({user_id:user,session_id:session,request_id:requestId,message}),signal:controller.signal});
     if (!response.ok) { const body=await response.json(); throw new Error(typeof body.detail === "string" ? body.detail : "请求失败 " + response.status); }
@@ -103,7 +103,13 @@ $("composer").onsubmit=async(event) => {
         if(data.type === "queued") $("run-status").textContent="已入队，等待本会话…";
         if(data.type === "model_start") $("run-status").textContent="模型决策 · 第 " + data.step + " 步";
         if(data.type === "tool_start") $("run-status").textContent="执行工具 · " + data.name;
-        if(data.type === "final") { receivedFinal=true; bubble("assistant",data.answer,data.status === "failed"); }
+        if(data.type === "token") {
+          if(!partial) { bubble("assistant",""); partial=$('messages').lastElementChild.querySelector('.content'); }
+          partial.textContent+=data.text;
+          $('messages').scrollTop=$('messages').scrollHeight;
+        }
+        if(data.type === "tool_start" && partial) { partial.closest('article').remove(); partial=null; }
+        if(data.type === "final") { receivedFinal=true; if(partial) partial.textContent=data.answer; else bubble("assistant",data.answer,data.status === "failed"); }
         if(data.type === "error") throw new Error(data.message);
       }
     }

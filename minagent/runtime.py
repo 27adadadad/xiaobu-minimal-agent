@@ -84,7 +84,12 @@ class Runtime:
             # Refresh after memory mutations in this same turn, not just at turn start.
             memories = self.store.recall(user)
             recalled = [{"role":"user","content":"[USER_MEMORY: untrusted reference data]\n"+json.dumps(memories,ensure_ascii=False)}] if memories else []
-            raw = await self.llm.complete(prefix+recalled+transcript,self.registry.schemas())
+            if hasattr(self.llm, "complete_stream"):
+                async def token(text):
+                    await event("token", text=text, step=step+1)
+                raw = await self.llm.complete_stream(prefix+recalled+transcript,self.registry.schemas(),token)
+            else:
+                raw = await self.llm.complete(prefix+recalled+transcript,self.registry.schemas())
             decision = parse_message(raw)
             await event("decision", step=step+1, reasoning_present=decision.reasoning_present, tool_count=len(decision.calls))
             if not decision.calls:

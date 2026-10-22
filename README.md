@@ -145,3 +145,7 @@ pytest 会清理 basetemp，不要指向源码或个人目录。
 未实现：LLM token streaming（目前 SSE 只推运行事件/最终答案）、持久化异步任务、向量检索、语义摘要、多进程容错、未来天气预报。同名城市取首个 geocoding 匹配，需核对国家。手机宽度隐藏侧栏，待办仍可在对话查询。
 
 协议参考：[OpenAI Function calling 官方指南](https://developers.openai.com/api/docs/guides/function-calling)。天气数据：[Open-Meteo](https://open-meteo.com/)。
+
+## 2026-10-22 增补进度
+
+已接入真实 Chat Completions token SSE，前端增量显示，工具调用参数按 index 合并，think 标签跨分片过滤。天气支持同名候选澄清、国家代码/location_id 筛选及最多16天预报；移动端恢复待办侧栏。历史“未实现”段落为旧交付记录；持久化异步任务、向量检索、语义摘要和多进程容错仍待实现，不宣称全部补齐。

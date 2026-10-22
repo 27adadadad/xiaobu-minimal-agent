@@ -1,0 +1,6 @@
+2026-10-22
+Offline: 37 passed, 1 skipped, 1 warning in 2.63s; exit 0.
+RUN_LIVE=1 pytest tests/test_live.py tests/test_stream.py: 2 passed in 9.21s; exit 0.
+Live runtime now uses complete_stream with real HTTP. Mock stream test validates content deltas.
+Weather forecast and candidate clarification implemented; dedicated live/weather/browser regression pending.
+Not complete: durable jobs, vector retrieval, semantic compaction, multiprocess failover.

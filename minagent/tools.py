@@ -80,16 +80,22 @@ async def weather(args, ctx):
     city = args["city"].strip()
     aliases = {"北京":"Beijing","上海":"Shanghai","广州":"Guangzhou","深圳":"Shenzhen","杭州":"Hangzhou","成都":"Chengdu","南京":"Nanjing"}
     async with httpx.AsyncClient(timeout=6, follow_redirects=False) as client:
-        geo = await client.get("https://geocoding-api.open-meteo.com/v1/search", params={"name":aliases.get(city,city),"count":1,"language":"zh","format":"json"})
+        geo = await client.get("https://geocoding-api.open-meteo.com/v1/search", params={"name":aliases.get(city,city),"count":5,"language":"zh","format":"json"})
         geo.raise_for_status()
         results = geo.json().get("results",[])
         if not results:
             return {"ok":False,"error":{"code":"city_not_found"}}
+        if args.get("country_code"):
+            results=[p for p in results if p.get("country_code", "").upper()==args["country_code"].upper()]
+        if args.get("location_id"):
+            results=[p for p in results if p.get("id")==args["location_id"]]
+        if len(results)!=1:
+            return {"ok":False,"error":{"code":"city_ambiguous" if results else "city_not_found"},"candidates":[{k:p.get(k) for k in ("id","name","country","country_code","admin1")} for p in results],"note":"请用户确认具体城市，再使用 location_id 查询，不得自行猜测。"}
         place = results[0]
-        response = await client.get("https://api.open-meteo.com/v1/forecast", params={"latitude":place["latitude"],"longitude":place["longitude"],"current":"temperature_2m,apparent_temperature,precipitation,weather_code","timezone":"auto"})
+        response = await client.get("https://api.open-meteo.com/v1/forecast", params={"latitude":place["latitude"],"longitude":place["longitude"],"current":"temperature_2m,apparent_temperature,precipitation,weather_code","timezone":"auto","daily":"temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code","forecast_days":args.get("days",7)})
         response.raise_for_status()
         payload = response.json()
-        return {"ok":True,"source":"Open-Meteo","city":place["name"],"country":place.get("country"),"timezone":payload.get("timezone"),"current":payload["current"],"units":payload.get("current_units",{}),"note":"当前天气，不是明日预报；同名城市使用首个匹配，请核对国家。"}
+        return {"ok":True,"source":"Open-Meteo","city":place["name"],"country":place.get("country"),"timezone":payload.get("timezone"),"current":payload["current"],"units":payload.get("current_units",{}),"daily":payload.get("daily",{}),"daily_units":payload.get("daily_units",{}),"note":"预报按当地日期返回；预报存在不确定性。"}
 
 
 def build_registry(store: Store):
@@ -111,7 +117,7 @@ def build_registry(store: Store):
     async def todo(args, ctx):
         return store.mutate("todo",args,ctx)
     registry.register("todo","管理当前用户待办。add 必须 text；done/delete 必须 id；list 查看。跨窗口共享但不跨用户。禁止从参数指定其他用户。",obj({"action":{"type":"string","enum":["add","list","done","delete"]},"text":text(500),"id":{"type":"integer","minimum":1}},["action"]),todo)
-    registry.register("weather","通过 Open-Meteo 查询城市当前真实天气。必须 city，不返回未来天气。服务失败时如实报告，不编造。",obj({"city":text(80)},["city"]),weather)
+    registry.register("weather","通过 Open-Meteo 查询城市当前真实天气。必须 city，返回当前及最多16天预报；遇到多个候选必须请用户澄清。服务失败时如实报告，不编造。",obj({"city":text(80),"country_code":{"type":"string","pattern":"^[A-Za-z]{2}$"},"location_id":{"type":"integer"},"days":{"type":"integer","minimum":1,"maximum":16}},["city"]),weather)
 
     async def memory(args, ctx):
         return store.mutate("memory",args,ctx)
